@@ -22,6 +22,32 @@ connection.connect(function(err) {
   });
 
 function questionTime(){
-
+    inquirer.prompt([{
+        message: "What would you like to do?",
+        type: "list",
+        options: 
+        [{message: "Add (dept, roles, emps)", value: "ADD"},
+        {message: "View (dept, roles, emps)", value: "SELECT"},
+        {message: "Update employee roles", value: "UPDATE"}],
+        value: "choice"
+    },{
+        message: "What would you like to add?",
+        type: "list",
+        options: 
+        [{message: "Departments", value: "departments"},
+        {message: "Employees", value: "employee"},
+        {message: "Roles", value: "role"}],
+        value: "addType",
+        when: (response) => response.choice === "ADD"
+    },{
+        message: "What would you like to update?",
+        type: "list",
+        options: 
+        [{message: "Departments", value: "departments"},
+        {message: "Employees", value: "employee"},
+        {message: "Roles", value: "role"}],
+        value: "updateType",
+        when: (response) => response.choice === "UPDATE"
+    }])
 }
   
