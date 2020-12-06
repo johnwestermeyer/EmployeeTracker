@@ -28,7 +28,8 @@ function questionTime(){
         options: 
         [{message: "Add (dept, roles, emps)", value: "ADD"},
         {message: "View (dept, roles, emps)", value: "SELECT"},
-        {message: "Update employee roles", value: "UPDATE"}],
+        {message: "Update employee roles", value: "UPDATE"},
+        "Quit"],
         value: "choice"
     },{
         message: "What would you like to add?",
@@ -48,6 +49,34 @@ function questionTime(){
         {message: "Roles", value: "role"}],
         value: "updateType",
         when: (response) => response.choice === "UPDATE"
-    }])
+    },{
+        message: "What would you like to view?",
+        type: "list",
+        options: 
+        [{message: "Departments", value: "departments"},
+        {message: "Employees", value: "employee"},
+        {message: "Roles", value: "role"}],
+        value: "viewType",
+        when: (response) => response.choice === "SELECT"
+    }]).then(response => {
+        switch (response.choice){
+            case "ADD":
+                addThis(response.addType);
+                break;
+            case "UPDATE":
+                updateThis(response.updateType);
+                break;
+            case "SELECT":
+                selectThis(response.viewType);
+                break;
+            default:
+                connection.end();
+                break;
+        }
+    })
+}
+
+const addThis = (type) => {
+    
 }
   
