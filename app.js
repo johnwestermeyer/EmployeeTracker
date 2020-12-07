@@ -12,7 +12,7 @@ var connection = mysql.createConnection({
 
   // Your password
   password: "securepass12!",
-  database: "employeesDB"
+  database: "employees_DB"
 });
 
 connection.connect(function(err) {
@@ -21,50 +21,53 @@ connection.connect(function(err) {
     questionTime();
   });
 
-function questionTime(){
+//ADD?
+    //Dept?
+        //ID (check),Name?
+    //Roles?
+        //ID (check),Name,Salary,Department_ID(get)
+    //Emp?
+        //ID (check),First Name, Last Name, Role Id (get), Manager Id (get)
+//UPDATE?
+
+//VIEW?
+
+function questionTime(){    
     inquirer.prompt([{
         message: "What would you like to do?",
         type: "list",
-        options: 
-        [{message: "Add (dept, roles, emps)", value: "ADD"},
-        {message: "View (dept, roles, emps)", value: "SELECT"},
-        {message: "Update employee roles", value: "UPDATE"},
+        choices: 
+        [{name: "Add (dept, roles, emps)", value: "ADD"},
+        {name: "View (dept, roles, emps)", value: "SELECT"},
+        {name: "Update employee roles", value: "UPDATE"},
         "Quit"],
-        value: "choice"
-    },{
-        message: "What would you like to add?",
-        type: "list",
-        options: 
-        [{message: "Departments", value: "departments"},
-        {message: "Employees", value: "employee"},
-        {message: "Roles", value: "role"}],
-        value: "addType",
-        when: (response) => response.choice === "ADD"
-    },{
-        message: "What would you like to update?",
-        type: "list",
-        options: 
-        [{message: "Departments", value: "departments"},
-        {message: "Employees", value: "employee"},
-        {message: "Roles", value: "role"}],
-        value: "updateType",
-        when: (response) => response.choice === "UPDATE"
+        name: "choice"
     },{
         message: "What would you like to view?",
         type: "list",
-        options: 
-        [{message: "Departments", value: "departments"},
-        {message: "Employees", value: "employee"},
-        {message: "Roles", value: "role"}],
-        value: "viewType",
+        choices: 
+        [{name: "Departments", value: "departments"},
+        {name: "Employees", value: "employee"},
+        {name: "Roles", value: "role"}],
+        name: "viewType",
         when: (response) => response.choice === "SELECT"
+    },{
+        message: `What would you like to add?`,
+        type: "list",
+        choices: 
+        [{name: "Departments", value: "Dept"},
+        {name: "Employees", value: "Emp"},
+        {name: "Roles", value: "Role"}],
+        name: "addType",
+        when: response => response.choice === "ADD"
     }]).then(response => {
         switch (response.choice){
             case "ADD":
-                addThis(response.addType);
+                let doThis = "add" + response.addType + "()";
+                eval(doThis);
                 break;
             case "UPDATE":
-                updateThis(response.updateType);
+                updateThis();
                 break;
             case "SELECT":
                 selectThis(response.viewType);
@@ -76,7 +79,104 @@ function questionTime(){
     })
 }
 
-const addThis = (type) => {
-    
+const addDept = () => {
+    connection.query('SELECT * FROM department', function(err, res){
+        let idList = res.map(x => x.id);
+        if(err) throw err;
+        inquirer.prompt([{
+            message: "What is the department id?",
+            type: "input",
+            name: "id",
+            validate: (ans) => {
+            //checking if department ID is in use, input is not a number or is an empty string
+               let test = true;
+               for(let i = 0; i < idList.length; i++){               
+                   if(parseInt(ans)===idList[i]){
+                       test = false;
+                   }
+               }
+               if(isNaN(ans)){
+                   return "Please Enter a Number Value";
+               } else if(!test){
+                   return "Please Enter an Original ID Number";
+               } else if(ans===""){
+                   return "Please Enter an ID Number";
+               } else{
+                   return true;
+               };
+           }
+        },{
+            message: "What is the department name?",
+            type: "input",
+            name: "name",
+            validate: ans => ans === "" ? "Please enter a department name" : true
+        }]).then(response => {
+             connection.query(
+                `INSERT INTO department SET ?`,{
+                    id: response.id,
+                    name: response.name
+                },
+                function(err, res2) {
+                if (err) throw err;
+                console.log(res2.affectedRows + ` department inserted!\n`);
+                doMore();
+                }
+)})})} 
+
+const addRole = () => {
+    connection.query('SELECT * FROM role', function(err, res){
+        let idList = res.map(x => x.id);
+        if(err) throw err;
+        inquirer.prompt([{
+            message: "What is the role id?",
+            type: "input",
+            name: "id",
+            validate: (ans) => {
+            //checking if role ID is in use, input is not a number or is an empty string
+               let test = true;
+               for(let i = 0; i < idList.length; i++){               
+                   if(parseInt(ans)===idList[i]){
+                       test = false;
+                   }
+               }
+               if(isNaN(ans)){
+                   return "Please Enter a Number Value";
+               } else if(!test){
+                   return "Please Enter an Original ID Number";
+               } else if(ans===""){
+                   return "Please Enter an ID Number";
+               } else{
+                   return true;
+               };
+           }
+        },{
+            message: "What is the role name?",
+            type: "input",
+            name: "name",
+            validate: ans => ans === "" ? "Please enter a role name" : true
+        }]).then(response => {
+             connection.query(
+                `INSERT INTO role SET ?`,{
+                    id: response.id,
+                    name: response.name
+                },
+                function(err, res2) {
+                if (err) throw err;
+                console.log(res2.affectedRows + ` department inserted!\n`);
+                doMore();
+                }
+)})})} 
+
+const doMore = () => {
+    inquirer.prompt([{
+        message: "Do you want to make any more changes?",
+        type: "confirm",
+        name: "cont"
+    }]).then(response => {
+        if(response.cont === true){
+            questionTime();
+        }else{
+            connection.end();
+        }
+    })
 }
-  
