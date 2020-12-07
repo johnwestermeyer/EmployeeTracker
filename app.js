@@ -125,7 +125,9 @@ const addDept = () => {
 
 const addRole = () => {
     connection.query('SELECT * FROM role', function(err, res){
+        connection.query('SELECT * FROM department', function(err, res2){
         let idList = res.map(x => x.id);
+        let deptList = res2.map(x => [x.id,x.name]);
         if(err) throw err;
         inquirer.prompt([{
             message: "What is the role id?",
@@ -150,22 +152,40 @@ const addRole = () => {
                };
            }
         },{
-            message: "What is the role name?",
+            message: "What is the role title?",
             type: "input",
             name: "name",
             validate: ans => ans === "" ? "Please enter a role name" : true
+        },{
+            message: "What is the salary?",
+            type: "input",
+            name: "salary",
+            validate: ans => ans === "" || isNaN(ans) ? "Please enter a salary number" : true
+        },{
+            message: "What is the department?",
+            type: "list",
+            name: "dept",
+            choices: () => {
+                let arr = []
+                for(let i = 0; i < deptList.length; i++){
+                    arr.push({name: deptList[i][1], value: deptList[i][0]});
+                }
+                return arr;
+            }
         }]).then(response => {
              connection.query(
                 `INSERT INTO role SET ?`,{
                     id: response.id,
-                    name: response.name
+                    title: response.name,
+                    salary: response.salary,
+                    department_id: response.dept
                 },
-                function(err, res2) {
+                function(err, res3) {
                 if (err) throw err;
-                console.log(res2.affectedRows + ` department inserted!\n`);
+                console.log(res3.affectedRows + ` department inserted!\n`);
                 doMore();
                 }
-)})})} 
+)})})})} 
 
 const doMore = () => {
     inquirer.prompt([{
