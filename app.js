@@ -79,7 +79,7 @@ function questionTime(){
                 eval(doThis);
                 break;
             case "UPDATE":
-                doThis = "update" + response.viewType + "()";
+                doThis = "update" + response.updateType + "()";
                 eval(doThis);
                 break;
             case "SELECT":
@@ -368,14 +368,44 @@ const selectEmp = () => {
 const updateDept = () => {
     connection.query(
         `SELECT * FROM department`,
-        function(err, res) {
+        function(err, resDept) {
         if (err) throw err;
-        let output = [];
-        res.forEach(e=>{
-            output.push({id: e.id, name: e.name})
-        })       
-        console.table(output);          
-        doMore();
+        deptList = resDept.map(e=> [e.id,e.name]);
+        inquirer.prompt([{
+            message: "Which value do you want to change?",
+            type: "list",
+            choices: [{name: "Department Name", value: "name"},
+            {name: "Department ID", value: "id"}],
+            name: "type"
+        },{
+            message: "Which department name do you want to change?",
+            type: "list",
+            choices: () => {
+                let arr = []
+                for(let i = 0; i < deptList.length; i++){
+                    arr.push({name: deptList[i][1], value: i});
+                }
+                return arr;
+            },
+            when: response => response.type === "name",
+            name: "whichName"
+        },{
+            message: "Which department id do you want to change?",
+            type: "list",
+            choices: () => {
+                let arr = []
+                for(let i = 0; i < deptList.length; i++){
+                    arr.push({name: `${deptList[i][0]}. ${deptList[i][1]}`, value: i});
+                }
+                return arr;
+            },
+            when: response => response.type === "id",
+            name: "whichID"
+        }]).then(response => {  
+            console.log(":3")
+        })
+                    
+        // doMore();
         })
 }
 
