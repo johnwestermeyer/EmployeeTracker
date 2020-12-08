@@ -1,7 +1,6 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
 const cTable = require('console.table');
-const { join } = require("path");
 
 var connection = mysql.createConnection({
   host: "localhost",
@@ -23,16 +22,7 @@ connection.connect(function(err) {
     questionTime();
   });
 
-//ADD?
-    //Dept?
-        //ID (check),Name?
-    //Roles?
-        //ID (check),Name,Salary,Department_ID(get)
-    //Emp?
-        //ID (check),First Name, Last Name, Role Id (get), Manager Id (get)
 //UPDATE?
-
-//VIEW?
 
 function questionTime(){    
     inquirer.prompt([{
@@ -94,32 +84,7 @@ function questionTime(){
 }
 
 const addDept = () => {
-    connection.query('SELECT * FROM department', function(err, resDept){
-        let idList = resDept.map(x => x.id);
-        if(err) throw err;
         inquirer.prompt([{
-            message: "What is the department id?",
-            type: "input",
-            name: "id",
-            validate: (ans) => {
-            //checking if department ID is in use, input is not a number or is an empty string
-               let test = true;
-               for(let i = 0; i < idList.length; i++){               
-                   if(parseInt(ans)===idList[i]){
-                       test = false;
-                   }
-               }
-               if(isNaN(ans)){
-                   return "Please Enter a Number Value";
-               } else if(!test){
-                   return "Please Enter an Original ID Number";
-               } else if(ans===""){
-                   return "Please Enter an ID Number";
-               } else{
-                   return true;
-               };
-           }
-        },{
             message: "What is the department name?",
             type: "input",
             name: "name",
@@ -137,37 +102,12 @@ const addDept = () => {
                 }
         )}
     )}
-)} 
 
 const addRole = () => {
-    connection.query('SELECT * FROM role', function(err, resRole){
         connection.query('SELECT * FROM department', function(err, resDept){
-        let idList = resRole.map(x => x.id);
         let deptList = resDept.map(x => [x.id,x.name]);
         if(err) throw err;
         inquirer.prompt([{
-            message: "What is the role id?",
-            type: "input",
-            name: "id",
-            validate: (ans) => {
-            //checking if role ID is in use, input is not a number or is an empty string
-               let test = true;
-               for(let i = 0; i < idList.length; i++){               
-                   if(parseInt(ans)===idList[i]){
-                       test = false;
-                   }
-               }
-               if(isNaN(ans)){
-                   return "Please Enter a Number Value";
-               } else if(!test){
-                   return "Please Enter an Original ID Number";
-               } else if(ans===""){
-                   return "Please Enter an ID Number";
-               } else{
-                   return true;
-               };
-           }
-        },{
             message: "What is the role title?",
             type: "input",
             name: "name",
@@ -203,13 +143,11 @@ const addRole = () => {
                 }
             )}
         )}
-    )}
-)} 
+    )} 
 
 const addEmp = () => {
     connection.query('SELECT * FROM employee', function(err, resEmp){
         connection.query('SELECT * FROM role', function(err, resRole){
-            let idList = resEmp.map(x => x.id);
             let managerList = resEmp.map(x => {
                 if(x.role_id === 1){
                     let name = `${x.first_name} ${x.last_name}`; 
@@ -219,28 +157,6 @@ const addEmp = () => {
             let roleList = resRole.map(x => [x.id,x.title]);
             if(err) throw err;
             inquirer.prompt([{
-                message: "What is the employee id?",
-                type: "input",
-                name: "id",
-                validate: (ans) => {
-                //checking if emp ID is in use, input is not a number or is an empty string
-                let test = true;
-                for(let i = 0; i < idList.length; i++){               
-                    if(parseInt(ans)===idList[i]){
-                        test = false;
-                    }
-                }
-                if(isNaN(ans)){
-                    return "Please Enter a Number Value";
-                } else if(!test){
-                    return "Please Enter an Original ID Number";
-                } else if(ans===""){
-                    return "Please Enter an ID Number";
-                } else{
-                    return true;
-                };
-            }
-            },{
                 message: "What is the employee's first name?",
                 type: "input",
                 name: "fname",
@@ -278,7 +194,6 @@ const addEmp = () => {
             }]).then(response => {
                 connection.query(
                     `INSERT INTO employee SET ?`,{
-                        id: response.id,
                         first_name: response.fname,
                         last_name: response.lname,
                         role_id: response.role,
@@ -372,41 +287,125 @@ const updateDept = () => {
         if (err) throw err;
         deptList = resDept.map(e=> [e.id,e.name]);
         inquirer.prompt([{
-            message: "Which value do you want to change?",
-            type: "list",
-            choices: [{name: "Department Name", value: "name"},
-            {name: "Department ID", value: "id"}],
-            name: "type"
-        },{
             message: "Which department name do you want to change?",
             type: "list",
             choices: () => {
                 let arr = []
                 for(let i = 0; i < deptList.length; i++){
-                    arr.push({name: deptList[i][1], value: i});
+                    arr.push({name: deptList[i][1], value: deptList[i][0]});
                 }
                 return arr;
             },
-            when: response => response.type === "name",
             name: "whichName"
         },{
-            message: "Which department id do you want to change?",
-            type: "list",
-            choices: () => {
-                let arr = []
-                for(let i = 0; i < deptList.length; i++){
-                    arr.push({name: `${deptList[i][0]}. ${deptList[i][1]}`, value: i});
-                }
-                return arr;
-            },
-            when: response => response.type === "id",
-            name: "whichID"
+            message: "What do you want the new department name to be?",
+            type: "input",
+            validate: ans => ans === "" ? "Please enter a new department name" : true,
+            name: "newName"
         }]).then(response => {  
-            console.log(":3")
+            connection.query(
+                `UPDATE department SET name = "${response.newName}" WHERE id = "${response.whichName}"`,
+                function(err, res) {
+                if (err) throw err;
+                console.log(res.affectedRows + ` department updated!\n`);
+                doMore();
+                })
+            })
         })
-                    
-        // doMore();
-        })
+}
+
+const updateRole = () => {
+    connection.query(
+        `SELECT * FROM department`,
+        function(err, resDept) {
+        if (err) throw err;
+        connection.query(
+            `SELECT * FROM role`,
+            function(err, resRole) {
+            if (err) throw err;
+            let deptList = []
+            resDept.forEach(e=> deptList.push({value: e.id, name: e.name}));
+            console.log(deptList);
+            roleList = resRole.map(e=> [e.id,e.title,e.salary,e.department_id]);
+            inquirer.prompt([{
+                message: "Which do you want change?",
+                type: "list",
+                choices: [{name: "Role Name", value: "title"},
+                {name: "Role Salary", value: "salary"},
+                {name: "Role Department", value: "department_id"}],
+                name: "choice"                
+            },{
+                message: "Which role name do you want to change?",
+                type: "list",
+                choices: () => {
+                    let arr = []
+                    for(let i = 0; i < roleList.length; i++){
+                        arr.push({name: roleList[i][1], value: roleList[i][0]});
+                    }
+                    return arr;
+                },
+                name: "whichName",
+                when: response => response.choice === "title"
+            },{
+                message: "What do you want the new role name to be?",
+                type: "input",
+                validate: ans => ans === "" ? "Please enter a new role name" : true,
+                name: "newName",
+                when: response => response.choice === "title"
+            },{
+                message: "Which role salary do you want to change?",
+                type: "list",
+                choices: () => {
+                    let arr = []
+                    for(let i = 0; i < roleList.length; i++){
+                        arr.push({name: `${roleList[i][1]} $${roleList[i][2]}`, value: roleList[i][0]});
+                    }
+                    return arr;
+                },
+                name: "whichName",
+                when: response => response.choice === "salary"
+            },{
+                message: "What do you want the new role salary to be?",
+                type: "input",
+                validate: ans => ans === "" || isNaN(ans) ? "Please enter a salary number" : true,
+                name: "newName",
+                when: response => response.choice === "salary"
+            },{
+                message: "Which role department do you want to change?",
+                type: "list",
+                choices: () => {
+                    let arr = []
+                    for(let i = 0; i < roleList.length; i++){
+                        let deptName = "";
+                        for(let j = 0; j < resDept.length; j++){
+                            if(resDept[j].id === roleList[i][0]){
+                                deptName = resDept[j].name;
+                            }
+                        }
+                        arr.push({name: `${roleList[i][1]} Dept: ${deptName}`, value: roleList[i][0]});
+                    }
+                    return arr;
+                },
+                name: "whichName",
+                when: response => response.choice === "department_id"
+            },{
+                message: "What do you want the new role department to be?",
+                type: "list",
+                choices: deptList,
+                name: "newName",
+                when: response => response.choice === "department_id"
+            }]).then(response => {  
+                connection.query(
+                    `UPDATE role SET ${response.choice} = "${response.newName}" 
+                    WHERE id = "${response.whichName}"`,
+                    function(err, res) {
+                    if (err) throw err;
+                    console.log(res.affectedRows + ` role updated!\n`);
+                    doMore();
+                    })
+                })
+            })
+        })  
 }
 
 
