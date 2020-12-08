@@ -1,6 +1,7 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
 const cTable = require('console.table');
+const { join } = require("path");
 
 var connection = mysql.createConnection({
   host: "localhost",
@@ -207,7 +208,7 @@ const addRole = () => {
 
 const addEmp = () => {
     connection.query('SELECT * FROM employee', function(err, res){
-        connection.query('SELECT * FROM department', function(err, res2){
+        connection.query('SELECT * FROM role', function(err, res2){
             let idList = res.map(x => x.id);
             let managerList = res.map(x => {
                 if(x.role_id === 1){
@@ -215,7 +216,7 @@ const addEmp = () => {
                     return [x.id, name]
                 }
                 }); 
-            let roleList = res2.map(x => [x.id,x.name]);
+            let roleList = res2.map(x => [x.id,x.title]);
             if(err) throw err;
             inquirer.prompt([{
                 message: "What is the employee id?",
@@ -309,16 +310,59 @@ const selectDept = () => {
 
 const selectRole = () => {
     connection.query(
-        `SELECT * FROM role`,
-        function(err, res) {
-        if (err) throw err;
-        let output = [];
-        res.forEach(e=>{
-            output.push({id: e.id, title: e.title, salary: e.salary, department_id: e.department_id})
-        })       
-        console.table(output);          
-        doMore();
+        `SELECT * FROM department`,
+        function(err,resDept){  
+            if(err) throw err;  
+        connection.query(
+            `SELECT * FROM role`,
+            function(err, resRole) {
+            if (err) throw err;
+            let output = [];
+            resRole.forEach(e=>{
+                let deptName = "";
+                for(let i = 0; i < resDept.length; i++){
+                    if(parseInt(resDept[i].id) === parseInt(e.department_id)){
+                        deptName = resDept[i].name;
+                    }
+                }
+                output.push({id: e.id, title: e.title, salary: e.salary, "department id": deptName})
+            })       
+            console.table(output);          
+            doMore();
+            })
         })
+    }
+
+const selectEmp = () => {
+    connection.query(
+        `SELECT * FROM role`,
+        function(err,resRole){  
+            if(err) throw err;     
+        connection.query(
+            `SELECT * FROM employee`,
+            function(err, resEmp) {
+            if (err) throw err;
+            let output = [];
+            let empList = resEmp.map(x => [x.id,x.title]);          
+            resEmp.forEach(e=>{                
+                let roleName, managerName = "";  
+                for(let i = 0; i < resRole.length; i++){
+                    if(resRole[i].id === e.role_id){
+                        roleName = resRole[i].title;
+                    }
+                }
+                for(let j = 0; j < empList.length; j++){
+                    if(resEmp[j].id === e.manager_id){
+                        managerName = `${resEmp[j].first_name} ${resEmp[j].last_name}`;
+                    }
+                }
+                output.push({id: e.id, "first name": e.first_name, "last name": e.last_name,
+                    role: roleName, manager: managerName})
+            })       
+            console.table(output);          
+            doMore();
+        })
+    })
 }
 
 
