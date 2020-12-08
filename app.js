@@ -182,10 +182,103 @@ const addRole = () => {
                 },
                 function(err, res3) {
                 if (err) throw err;
-                console.log(res3.affectedRows + ` department inserted!\n`);
+                console.log(res3.affectedRows + ` role inserted!\n`);
                 doMore();
                 }
-)})})})} 
+            )}
+        )}
+    )}
+)} 
+
+const addEmp = () => {
+    connection.query('SELECT * FROM employee', function(err, res){
+        connection.query('SELECT * FROM department', function(err, res2){
+            let idList = res.map(x => x.id);
+            let managerList = res.map(x => {
+                if(x.role_id === 1){
+                    let name = `${x.first_name} ${x.last_name}`; 
+                    return [x.id, name]
+                }
+                }); 
+            let roleList = res2.map(x => [x.id,x.name]);
+            if(err) throw err;
+            inquirer.prompt([{
+                message: "What is the employee id?",
+                type: "input",
+                name: "id",
+                validate: (ans) => {
+                //checking if emp ID is in use, input is not a number or is an empty string
+                let test = true;
+                for(let i = 0; i < idList.length; i++){               
+                    if(parseInt(ans)===idList[i]){
+                        test = false;
+                    }
+                }
+                if(isNaN(ans)){
+                    return "Please Enter a Number Value";
+                } else if(!test){
+                    return "Please Enter an Original ID Number";
+                } else if(ans===""){
+                    return "Please Enter an ID Number";
+                } else{
+                    return true;
+                };
+            }
+            },{
+                message: "What is the employee's first name?",
+                type: "input",
+                name: "fname",
+                validate: ans => ans === "" ? "Please enter a first name" : true
+            },{
+                message: "What is the employee's last name?",
+                type: "input",
+                name: "lname",
+                validate: ans => ans === "" ? "Please enter a last name" : true
+            },{
+                message: "What is the role?",
+                type: "list",
+                name: "role",
+                choices: () => {
+                    let arr = []
+                    for(let i = 0; i < roleList.length; i++){
+                        arr.push({name: roleList[i][1], value: roleList[i][0]});
+                    }
+                    return arr;
+                }
+            },{
+                message: "Who is their manager?",
+                type: "list",
+                name: "mang",
+                choices: () => {
+                    let arr = []
+                    for(let i = 0; i < managerList.length; i++){
+                        arr.push({name: managerList[i][1], value: managerList[i][0]});
+                    }
+                    if(arr.length < 1 || arr === undefined){
+                        return [{name: "No managers available", value: "0"}];
+                    }
+                    return arr;
+                }
+            }]).then(response => {
+                connection.query(
+                    `INSERT INTO employee SET ?`,{
+                        id: response.id,
+                        first_name: response.fname,
+                        last_name: response.lname,
+                        role_id: response.role,
+                        manager_id: response.mang
+                    },
+                    function(err, res4) {
+                    if (err) throw err;
+                    console.log(res4.affectedRows + ` employee inserted!\n`);
+                    doMore();
+                    }
+            )}
+        )}
+    )}
+)}
+
+
 
 const doMore = () => {
     inquirer.prompt([{
