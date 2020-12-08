@@ -47,11 +47,20 @@ function questionTime(){
         message: "What would you like to view?",
         type: "list",
         choices: 
-        [{name: "Departments", value: "departments"},
-        {name: "Employees", value: "employee"},
-        {name: "Roles", value: "role"}],
+        [{name: "Departments", value: "Dept"},
+        {name: "Employees", value: "Emp"},
+        {name: "Roles", value: "Role"}],
         name: "viewType",
         when: (response) => response.choice === "SELECT"
+    },{
+        message: "What would you like to update?",
+        type: "list",
+        choices: 
+        [{name: "Departments", value: "Dept"},
+        {name: "Employees", value: "Emp"},
+        {name: "Roles", value: "Role"}],
+        name: "updateType",
+        when: (response) => response.choice === "UPDATE"
     },{
         message: `What would you like to add?`,
         type: "list",
@@ -62,16 +71,19 @@ function questionTime(){
         name: "addType",
         when: response => response.choice === "ADD"
     }]).then(response => {
+        let doThis = "";
         switch (response.choice){
             case "ADD":
-                let doThis = "add" + response.addType + "()";
+                doThis = "add" + response.addType + "()";
                 eval(doThis);
                 break;
             case "UPDATE":
-                updateThis();
+                doThis = "update" + response.viewType + "()";
+                eval(doThis);
                 break;
             case "SELECT":
-                selectThis(response.viewType);
+                doThis = "select" + response.viewType + "()";
+                eval(doThis);
                 break;
             default:
                 connection.end();
@@ -281,15 +293,34 @@ const addEmp = () => {
     )}
 )}
 
-const selectThis = input => {
+const selectDept = () => {
     connection.query(
-        `SELECT * FROM ${input}`,
+        `SELECT * FROM department`,
         function(err, res) {
         if (err) throw err;
-        console.log(res);
+        let output = [];
+        res.forEach(e=>{
+            output.push({id: e.id, name: e.name})
+        })       
+        console.table(output);          
         doMore();
-        }
+        })
 }
+
+const selectRole = () => {
+    connection.query(
+        `SELECT * FROM role`,
+        function(err, res) {
+        if (err) throw err;
+        let output = [];
+        res.forEach(e=>{
+            output.push({id: e.id, title: e.title, salary: e.salary, department_id: e.department_id})
+        })       
+        console.table(output);          
+        doMore();
+        })
+}
+
 
 
 
