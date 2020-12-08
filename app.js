@@ -94,8 +94,8 @@ function questionTime(){
 }
 
 const addDept = () => {
-    connection.query('SELECT * FROM department', function(err, res){
-        let idList = res.map(x => x.id);
+    connection.query('SELECT * FROM department', function(err, resDept){
+        let idList = resDept.map(x => x.id);
         if(err) throw err;
         inquirer.prompt([{
             message: "What is the department id?",
@@ -130,9 +130,9 @@ const addDept = () => {
                     id: response.id,
                     name: response.name
                 },
-                function(err, res2) {
+                function(err, res) {
                 if (err) throw err;
-                console.log(res2.affectedRows + ` department inserted!\n`);
+                console.log(res.affectedRows + ` department inserted!\n`);
                 doMore();
                 }
         )}
@@ -140,10 +140,10 @@ const addDept = () => {
 )} 
 
 const addRole = () => {
-    connection.query('SELECT * FROM role', function(err, res){
-        connection.query('SELECT * FROM department', function(err, res2){
-        let idList = res.map(x => x.id);
-        let deptList = res2.map(x => [x.id,x.name]);
+    connection.query('SELECT * FROM role', function(err, resRole){
+        connection.query('SELECT * FROM department', function(err, resDept){
+        let idList = resRole.map(x => x.id);
+        let deptList = resDept.map(x => [x.id,x.name]);
         if(err) throw err;
         inquirer.prompt([{
             message: "What is the role id?",
@@ -196,9 +196,9 @@ const addRole = () => {
                     salary: response.salary,
                     department_id: response.dept
                 },
-                function(err, res3) {
+                function(err, res) {
                 if (err) throw err;
-                console.log(res3.affectedRows + ` role inserted!\n`);
+                console.log(res.affectedRows + ` role inserted!\n`);
                 doMore();
                 }
             )}
@@ -207,16 +207,16 @@ const addRole = () => {
 )} 
 
 const addEmp = () => {
-    connection.query('SELECT * FROM employee', function(err, res){
-        connection.query('SELECT * FROM role', function(err, res2){
-            let idList = res.map(x => x.id);
-            let managerList = res.map(x => {
+    connection.query('SELECT * FROM employee', function(err, resEmp){
+        connection.query('SELECT * FROM role', function(err, resRole){
+            let idList = resEmp.map(x => x.id);
+            let managerList = resEmp.map(x => {
                 if(x.role_id === 1){
                     let name = `${x.first_name} ${x.last_name}`; 
                     return [x.id, name]
                 }
                 }); 
-            let roleList = res2.map(x => [x.id,x.title]);
+            let roleList = resRole.map(x => [x.id,x.title]);
             if(err) throw err;
             inquirer.prompt([{
                 message: "What is the employee id?",
@@ -284,9 +284,9 @@ const addEmp = () => {
                         role_id: response.role,
                         manager_id: response.mang
                     },
-                    function(err, res4) {
+                    function(err, res) {
                     if (err) throw err;
-                    console.log(res4.affectedRows + ` employee inserted!\n`);
+                    console.log(res.affectedRows + ` employee inserted!\n`);
                     doMore();
                     }
             )}
@@ -365,6 +365,19 @@ const selectEmp = () => {
     })
 }
 
+const updateDept = () => {
+    connection.query(
+        `SELECT * FROM department`,
+        function(err, res) {
+        if (err) throw err;
+        let output = [];
+        res.forEach(e=>{
+            output.push({id: e.id, name: e.name})
+        })       
+        console.table(output);          
+        doMore();
+        })
+}
 
 
 
