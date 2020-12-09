@@ -319,30 +319,60 @@ const selectEmpByCat = () => {
         {name: "Sort by Manager", value: "manager_id"}]
     }
     ]).then(response => {
-    connection.query(
-        `SELECT COUNT(role_id) as roleCount, role.salary, department.name, department.id
-        FROM employee
-        INNER JOIN role
-        ON employee.role_id = role.id
-        INNER JOIN department
-        ON role.department_id = department.id
-        GROUP BY role_id
-        ORDER BY department.id ASC;`,
-        function(err, resJoin){
-        if (err) throw err;
-                let output = [];
-                resJoin.forEach(e=>{
-                    //thank you Umair Ahmed on stackoverflow for the following if condition
-                    if(output.findIndex(obj => obj.id == e.id) > -1){
-                        let id = output.findIndex(obj => obj.id == e.id);
-                        output[id].budget = Math.round  (parseInt(output[id].budget)+(parseFloat(e.salary) * parseInt(e.roleCount)));
-                    }else{
-                        output.push({id: e.id, name: e.name, budget: (parseFloat(e.salary) * parseInt(e.roleCount)).toFixed(0)});
+        if(response.sortChoice === "manager_id"){
+            connection.query(
+            `SELECT employee.*, role.title
+            FROM employee
+            INNER JOIN role
+            WHERE role_id=role.id;`,
+            function(err, resEmp){
+            if (err) throw err;
+                    let managerList = [];
+                    resEmp.forEach(e=> {if(e.role_id === 1)managerList.push({value: e.id, name: `${e.first_name} ${e.last_name}`})})
+                    inquirer.prompt([{
+                        message: "Which manager's employee would you like to list?",
+                        name: "managerID",
+                        type: "list",
+                        choices: managerList
+                    }]).then(secondRes=>{
+                        let output = [];
+                        resEmp.forEach(e=> {if(e.manager_id === secondRes.managerID)output
+                            .push({id: e.id, name: `${e.first_name} ${e.last_name}`, title: e.title})})                    
+                        console.table(output);          
+                        doMore();
+                        })
+            })
+        }else if(response.sortChoice === "role_id"){
+        connection.query(
+            `SELECT * FROM role`,
+            function(err, resRole){
+            if (err) throw err;
+                    inquirer.prompt([{
+                        message: "Which manager's employee would you like to list?",
+                        name: "roleID",
+                        type: "list",
+                        choices: () => {
+                            let arr=[];
+                            resRole.forEach(e=> arr.push({name: e.title, value: e.id}));
+                            return arr;
+                        }
+                    }]).then(secondRes=>{
+                        connection.query(
+                            `SELECT employee.*, role.title
+                            FROM employee
+                            INNER JOIN role
+                            WHERE role_id = ${secondRes.roleID}
+                            AND role_id = role.id`,
+                            function(err, resEmp){
+                                let output = [];
+                                resEmp.forEach(e=> output.push({id: e.id, name: `${e.first_name} ${e.last_name}`, title: e.title}));                  
+                                console.table(output);          
+                                doMore();
+                        })
+                    })
                 }
-                })
-                console.table(output);          
-                doMore();
-    })})
+        )}                
+    })
 }
 
 const updateDept = () => {
