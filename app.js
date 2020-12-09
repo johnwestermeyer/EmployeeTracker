@@ -270,7 +270,7 @@ const selectRole = () => {
             if (err) throw err;
             let output = [];
             resJoin.forEach(e=>{
-                output.push({id: e.id, title: e.title, salary: e.salary, "department id": e.name})
+                output.push({id: e.id, title: e.title, salary: e.salary, department: e.name})
             })       
             console.table(output);          
             doMore();
