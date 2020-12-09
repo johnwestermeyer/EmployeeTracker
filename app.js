@@ -369,17 +369,12 @@ const updateDept = () => {
         `SELECT * FROM department`,
         function(err, resDept) {
         if (err) throw err;
-        deptList = resDept.map(e=> [e.id,e.name]);
+        deptList = []
+        resDept.forEach(e=> deptList.push({value: e.id, name:e.name}));
         inquirer.prompt([{
             message: "Which department name do you want to change?",
             type: "list",
-            choices: () => {
-                let arr = []
-                for(let i = 0; i < deptList.length; i++){
-                    arr.push({name: deptList[i][1], value: deptList[i][0]});
-                }
-                return arr;
-            },
+            choices: deptList,
             name: "whichName"
         },{
             message: "What do you want the new department name to be?",
