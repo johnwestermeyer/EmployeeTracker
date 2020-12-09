@@ -22,16 +22,15 @@ connection.connect(function(err) {
     questionTime();
   });
 
-//UPDATE?
-
 function questionTime(){    
     inquirer.prompt([{
         message: "What would you like to do?",
         type: "list",
         choices: 
         [{name: "Add (dept, roles, emps)", value: "ADD"},
-        {name: "View (dept, roles, emps)", value: "SELECT"},
+        {name: "View (dept, dept budgets, roles, emps, emps by category)", value: "SELECT"},
         {name: "Update (dept, roles, emps)", value: "UPDATE"},
+        {name: "Delete (dept, roles, emps)", value: "DELETE"},
         "Quit"],
         name: "choice"
     },{
@@ -39,8 +38,10 @@ function questionTime(){
         type: "list",
         choices: 
         [{name: "Departments", value: "Dept"},
+        {name: "Department Budgets", value: "DeptBudget"},
+        {name: "Roles", value: "Role"},
         {name: "Employees", value: "Emp"},
-        {name: "Roles", value: "Role"}],
+        {name: "Employees by Category", value: "EmpByCat"}],
         name: "viewType",
         when: (response) => response.choice === "SELECT"
     },{
@@ -148,12 +149,12 @@ const addRole = () => {
 const addEmp = () => {
     connection.query('SELECT * FROM employee', function(err, resEmp){
         connection.query('SELECT * FROM role', function(err, resRole){
-            let managerList = resEmp.map(x => {
-                if(x.role_id === 1){
-                    let name = `${x.first_name} ${x.last_name}`; 
-                    return [x.id, name]
-                }
-                }); 
+            let managerList = [];
+            for(let i = 0; i < resEmp.length; i++){
+                if(resEmp[i].role_id === 1){
+                    let name = `${resEmp[i].first_name} ${resEmp[i].last_name}`; 
+                    managerList.push([resEmp[i].id, name]);
+                }};
             let roleList = resRole.map(x => [x.id,x.title]);
             if(err) throw err;
             inquirer.prompt([{
@@ -207,7 +208,7 @@ const addEmp = () => {
             )}
         )}
     )}
-)}
+    )}
 
 const selectDept = () => {
     connection.query(
@@ -221,6 +222,35 @@ const selectDept = () => {
         console.table(output);          
         doMore();
         })
+}
+
+//If I ever get the chance to refactor this mess, I want it to look more like this function
+//If only to get better at SQL queries
+const selectDeptBudget = () => {
+    connection.query(
+        `SELECT COUNT(role_id) as roleCount, role.salary, department.name, department.id
+        FROM employee
+        INNER JOIN role
+        ON employee.role_id = role.id
+        INNER JOIN department
+        ON role.department_id = department.id
+        GROUP BY role_id
+        ORDER BY department.id ASC;`,
+        function(err, resJoin){
+        if (err) throw err;
+                let output = [];
+                resJoin.forEach(e=>{
+                    //thank you Umair Ahmed on stackoverflow for the following if condition
+                    if(output.findIndex(obj => obj.id == e.id) > -1){
+                        let id = output.findIndex(obj => obj.id == e.id);
+                        output[id].budget = Math.round  (parseInt(output[id].budget)+(parseFloat(e.salary) * parseInt(e.roleCount)));
+                    }else{
+                        output.push({id: e.id, name: e.name, budget: (parseFloat(e.salary) * parseInt(e.roleCount)).toFixed(0)});
+                }
+                })
+                console.table(output);          
+                doMore();
+    })
 }
 
 const selectRole = () => {
@@ -278,6 +308,41 @@ const selectEmp = () => {
             doMore();
         })
     })
+}
+
+const selectEmpByCat = () => {
+    inquirer.prompt([{
+        message: "What category would you like to sort by?",
+        type: "list",
+        name: "sortChoice",
+        choices: [{name: "Sort by Role", value: "role_id"},
+        {name: "Sort by Manager", value: "manager_id"}]
+    }
+    ]).then(response => {
+    connection.query(
+        `SELECT COUNT(role_id) as roleCount, role.salary, department.name, department.id
+        FROM employee
+        INNER JOIN role
+        ON employee.role_id = role.id
+        INNER JOIN department
+        ON role.department_id = department.id
+        GROUP BY role_id
+        ORDER BY department.id ASC;`,
+        function(err, resJoin){
+        if (err) throw err;
+                let output = [];
+                resJoin.forEach(e=>{
+                    //thank you Umair Ahmed on stackoverflow for the following if condition
+                    if(output.findIndex(obj => obj.id == e.id) > -1){
+                        let id = output.findIndex(obj => obj.id == e.id);
+                        output[id].budget = Math.round  (parseInt(output[id].budget)+(parseFloat(e.salary) * parseInt(e.roleCount)));
+                    }else{
+                        output.push({id: e.id, name: e.name, budget: (parseFloat(e.salary) * parseInt(e.roleCount)).toFixed(0)});
+                }
+                })
+                console.table(output);          
+                doMore();
+    })})
 }
 
 const updateDept = () => {
@@ -494,15 +559,17 @@ const updateEmp = () => {
                 type: "list",
                 choices: () => {
                     let arr = []
-                    for(let i = 0; i < roleList.length; i++){
+                    for(let i = 0; i < empList.length; i++){
                         let managerName = "";
+                        
                         for(let j = 0; j < resEmp.length; j++){
-                            if(resEmp[j].id === roleList[i][0]){
+                            if(empList[i][4] === resEmp[j].id){
                                 managerName = `${resEmp[j].first_name} ${resEmp[j].last_name}`;
                             }
                         }
                         arr.push({name: `${empList[i][1]} ${empList[i][2]} - Manager: ${managerName}`, value: empList[i][0]});
                     }
+                    
                     return arr;
                 },
                 name: "whichName",
@@ -542,3 +609,6 @@ const doMore = () => {
         }
     })
 }
+
+//<o.o;>
+//johnwestermeyer.github.io
