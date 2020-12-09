@@ -276,10 +276,12 @@ const selectRole = () => {
             doMore();
             })
     }
-
+//view Employees function
+//pretty proud of this SQL query
 const selectEmp = () => {
     connection.query(
-            `SELECT e.*, role.title, (SELECT CONCAT(e2.first_name, " ", e2.last_name) 
+            `SELECT e.*, role.title, 
+            (SELECT CONCAT(e2.first_name, " ", e2.last_name) 
             FROM employee as e2 WHERE e2.id = e.manager_id) as mangName	
             FROM employee as e
             INNER JOIN role
@@ -402,12 +404,17 @@ const updateRole = () => {
         function(err, resDept) {
         if (err) throw err;
         connection.query(
-            `SELECT * FROM role`,
+            `SELECT role.*, department.name 
+            FROM role
+            INNER JOIN department
+            WHERE role.department_id = department.id`,
             function(err, resRole) {
             if (err) throw err;
-            let deptList = []
+            let deptList = [], roleNameList = [], roleSalList = [], roleDeptList = [];
             resDept.forEach(e=> deptList.push({value: e.id, name: e.name}));
-            roleList = resRole.map(e=> [e.id,e.title,e.salary,e.department_id]);
+            resRole.forEach(e=> {roleNameList.push({value: e.id, name: e.title})
+                                roleSalList.push({value: e.id, name: `${e.title} $${e.salary}`})
+                                roleDeptList.push({value: e.id, name: `${e.title} Dept:${e.name}`})});
             inquirer.prompt([{
                 message: "Which do you want change?",
                 type: "list",
@@ -418,13 +425,7 @@ const updateRole = () => {
             },{
                 message: "Which role name do you want to change?",
                 type: "list",
-                choices: () => {
-                    let arr = []
-                    for(let i = 0; i < roleList.length; i++){
-                        arr.push({name: roleList[i][1], value: roleList[i][0]});
-                    }
-                    return arr;
-                },
+                choices: roleNameList,
                 name: "whichName",
                 when: response => response.choice === "title"
             },{
@@ -436,13 +437,7 @@ const updateRole = () => {
             },{
                 message: "Which role salary do you want to change?",
                 type: "list",
-                choices: () => {
-                    let arr = []
-                    for(let i = 0; i < roleList.length; i++){
-                        arr.push({name: `${roleList[i][1]} $${roleList[i][2]}`, value: roleList[i][0]});
-                    }
-                    return arr;
-                },
+                choices: roleSalList,
                 name: "whichName",
                 when: response => response.choice === "salary"
             },{
@@ -454,19 +449,7 @@ const updateRole = () => {
             },{
                 message: "Which role department do you want to change?",
                 type: "list",
-                choices: () => {
-                    let arr = []
-                    for(let i = 0; i < roleList.length; i++){
-                        let deptName = "";
-                        for(let j = 0; j < resDept.length; j++){
-                            if(resDept[j].id === roleList[i][0]){
-                                deptName = resDept[j].name;
-                            }
-                        }
-                        arr.push({name: `${roleList[i][1]} Dept: ${deptName}`, value: roleList[i][0]});
-                    }
-                    return arr;
-                },
+                choices: roleDeptList,
                 name: "whichName",
                 when: response => response.choice === "department_id"
             },{
