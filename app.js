@@ -23,7 +23,7 @@ connection.connect(function(err) {
     console.log("connected as id " + connection.threadId + "\n");
     questionTime();
   });
-//main function, start in of inquirer prompts
+//main function, start of inquirer prompts
 function questionTime(){    
     inquirer.prompt([{
         message: "What would you like to do?",
@@ -97,7 +97,7 @@ function questionTime(){
         }
     })
 }
-
+//add Dept function
 const addDept = () => {
         inquirer.prompt([{
             message: "What is the department name?",
@@ -117,7 +117,7 @@ const addDept = () => {
                 }
         )}
     )}
-
+//add role function
 const addRole = () => {
         connection.query('SELECT * FROM department', function(err, resDept){
         let deptList = [];
@@ -159,15 +159,16 @@ const addRole = () => {
             )}
         )}
     )} 
-
+//add Employee function
 const addEmp = () => {
-    connection.query('SELECT * FROM employee WHERE role_id = "1"', function(err, resEmp){
-        connection.query('SELECT * FROM role', function(err, resRole){
+    connection.query('SELECT first_name,last_name,id FROM employee WHERE role_id = "1"', function(err, resEmp){
+        if (err) throw err;
+        connection.query('SELECT id,title FROM role', function(err, resRole){
+            if (err) throw err;
             let managerList = [];
             resEmp.forEach(e => {managerList.push({value: e.id, name: `${e.first_name} ${e.last_name}`})});
             let roleList = [];
             resRole.forEach(r => roleList.push({value: r.id, name: r.title}));
-            if(err) throw err;
             inquirer.prompt([{
                 message: "What is the employee's first name?",
                 type: "input",
@@ -259,7 +260,7 @@ const selectDeptBudget = () => {
                 doMore();
     })
 }
-
+//view Roles function
 const selectRole = () => { 
         connection.query(
             `SELECT role.*, department.name 
@@ -298,7 +299,7 @@ const selectEmp = () => {
         })
     
 }
-
+//view Employees by category function
 const selectEmpByCat = () => {
     inquirer.prompt([{
         message: "What category would you like to sort by?",
@@ -333,18 +334,16 @@ const selectEmpByCat = () => {
             })
         }else if(response.sortChoice === "role_id"){
         connection.query(
-            `SELECT * FROM role`,
+            `SELECT title,id FROM role`,
             function(err, resRole){
-            if (err) throw err;
+                if (err) throw err;
+                let roleList = [];
+                resRole.forEach(e=> roleList.push({name: e.title, value: e.id}));
                     inquirer.prompt([{
                         message: "Which manager's employee would you like to list?",
                         name: "roleID",
                         type: "list",
-                        choices: () => {
-                            let arr=[];
-                            resRole.forEach(e=> arr.push({name: e.title, value: e.id}));
-                            return arr;
-                        }
+                        choices: roleList
                     }]).then(secondRes=>{
                         connection.query(
                             `SELECT employee.*, role.title
@@ -363,7 +362,7 @@ const selectEmpByCat = () => {
         )}                
     })
 }
-
+//update Dept function
 const updateDept = () => {
     connection.query(
         `SELECT * FROM department`,
@@ -392,7 +391,7 @@ const updateDept = () => {
             })
         })
 }
-
+//update Role function
 const updateRole = () => {
     connection.query(
         `SELECT * FROM department`,
@@ -466,21 +465,28 @@ const updateRole = () => {
             })
         })  
 }
-
+//update Emp function
 const updateEmp = () => {
     connection.query(
-        `SELECT * FROM employee`,
+        `SELECT e.*, role.title, 
+        (SELECT CONCAT(e2.first_name, " ", e2.last_name) 
+        FROM employee as e2 WHERE e2.id = e.manager_id) as mangName	
+        FROM employee as e
+        INNER JOIN role
+        WHERE role.id = e.role_id`,
         function(err, resEmp) {
         if (err) throw err;
         connection.query(
             `SELECT * FROM role`,
             function(err, resRole) {
             if (err) throw err;
-            let roleList = [];
-            let managerList = [];            
+            let roleList = [], managerList = [], empNameList = [], empRoleList = [], empMangList = [];            
             resRole.forEach(e=> roleList.push({value: e.id, name: e.title}));
-            resEmp.forEach(e=> {if(e.role_id === 1)managerList.push({value: e.id, name: `${e.first_name} ${e.last_name}`})})
-            empList = resEmp.map(e=> [e.id,e.first_name,e.last_name,e.role_id,e.manager_id]);
+            resEmp.forEach(e=> {
+                if(e.role_id === 1)managerList.push({value: e.id, name: `${e.first_name} ${e.last_name}`});
+                empNameList.push({value: e.id, name: `${e.first_name} ${e.last_name}`});
+                empRoleList.push({value: e.id, name: `${e.first_name} ${e.last_name}, Role: ${e.title}`});
+                empMangList.push({value: e.id, name: `${e.first_name} ${e.last_name}, Manager: ${e.mangName}`});})
             inquirer.prompt([{
                 message: "Which do you want change?",
                 type: "list",
@@ -492,13 +498,7 @@ const updateEmp = () => {
             },{
                 message: "Which employee's first name do you want to change?",
                 type: "list",
-                choices: () => {
-                    let arr = []
-                    for(let i = 0; i < empList.length; i++){
-                        arr.push({name: `${empList[i][1]} ${empList[i][2]}`, value: empList[i][0]});
-                    }
-                    return arr;
-                },
+                choices: empNameList,
                 name: "whichName",
                 when: response => response.choice === "first_name"
             },{
@@ -510,13 +510,7 @@ const updateEmp = () => {
             },{
                 message: "Which employee's last name do you want to change?",
                 type: "list",
-                choices: () => {
-                    let arr = []
-                    for(let i = 0; i < empList.length; i++){
-                        arr.push({name: `${empList[i][2]}, ${empList[i][1]}`, value: empList[i][0]});
-                    }
-                    return arr;
-                },
+                choices: empNameList,
                 name: "whichName",
                 when: response => response.choice === "last_name"
             },{
@@ -528,19 +522,7 @@ const updateEmp = () => {
             },{
                 message: "Which employee's role do you want to change?",
                 type: "list",
-                choices: () => {
-                    let arr = []
-                    for(let i = 0; i < empList.length; i++){
-                        let roleName = "";
-                        for(let j = 0; j < resRole.length; j++){
-                            if(resRole[j].id === empList[i][3]){
-                                roleName = resRole[j].title;
-                            }
-                        }
-                        arr.push({name: `${empList[i][1]} ${empList[i][2]} - ${roleName}`, value: empList[i][0]});
-                    }
-                    return arr;
-                },
+                choices: empRoleList,
                 name: "whichName",
                 when: response => response.choice === "role_id"
             },{
@@ -552,21 +534,7 @@ const updateEmp = () => {
             },{
                 message: "Which employee's manager do you want to change?",
                 type: "list",
-                choices: () => {
-                    let arr = []
-                    for(let i = 0; i < empList.length; i++){
-                        let managerName = "";
-                        
-                        for(let j = 0; j < resEmp.length; j++){
-                            if(empList[i][4] === resEmp[j].id){
-                                managerName = `${resEmp[j].first_name} ${resEmp[j].last_name}`;
-                            }
-                        }
-                        arr.push({name: `${empList[i][1]} ${empList[i][2]} - Manager: ${managerName}`, value: empList[i][0]});
-                    }
-                    
-                    return arr;
-                },
+                choices: empMangList,
                 name: "whichName",
                 when: response => response.choice === "manager_id"
             },{
