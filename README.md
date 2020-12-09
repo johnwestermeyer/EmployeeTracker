@@ -11,7 +11,7 @@
 ## Description
 * Employee Database Manager with tools for creating, reading, updating and deleting
 ## Installation
-* Download .zip and extract or git clone, in your terminal 'npm i' in the root directory to install node dependencies then use the provided schema to create and populate the DB in MySQL
+* Download .zip and extract or git clone, in your terminal 'npm i' in the root directory to install node dependencies, then use the provided schema.sql to create and populate the DB in MySQL, make sure the password in the mysql connection in app.js is set to your root password
 ## Usage
 * 'node app.js' in your terminal to start application then use command line interface to select from list of menu options (Add, View, Update, Delete) then answer corresponding prompts to fine tune selection/creation
 ## Contributing
