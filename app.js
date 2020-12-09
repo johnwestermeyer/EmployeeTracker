@@ -121,7 +121,7 @@ const addDept = () => {
 const addRole = () => {
         connection.query('SELECT * FROM department', function(err, resDept){
         let deptList = [];
-        resDept.forEach(d => deptList.push({value: x.id, name: x.name}));
+        resDept.forEach(d => deptList.push({value: d.id, name: d.name}));
         if(err) throw err;
         inquirer.prompt([{
             message: "What is the role title?",
@@ -165,9 +165,8 @@ const addEmp = () => {
         if (err) throw err;
         connection.query('SELECT id,title FROM role', function(err, resRole){
             if (err) throw err;
-            let managerList = [];
+            let managerList = [], roleList = [];
             resEmp.forEach(e => {managerList.push({value: e.id, name: `${e.first_name} ${e.last_name}`})});
-            let roleList = [];
             resRole.forEach(r => roleList.push({value: r.id, name: r.title}));
             inquirer.prompt([{
                 message: "What is the employee's first name?",
