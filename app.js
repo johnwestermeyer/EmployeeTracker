@@ -161,15 +161,12 @@ const addRole = () => {
     )} 
 
 const addEmp = () => {
-    connection.query('SELECT * FROM employee', function(err, resEmp){
+    connection.query('SELECT * FROM employee WHERE role_id = "1"', function(err, resEmp){
         connection.query('SELECT * FROM role', function(err, resRole){
             let managerList = [];
-            for(let i = 0; i < resEmp.length; i++){
-                if(resEmp[i].role_id === 1){
-                    let name = `${resEmp[i].first_name} ${resEmp[i].last_name}`; 
-                    managerList.push([resEmp[i].id, name]);
-                }};
-            let roleList = resRole.map(x => [x.id,x.title]);
+            resEmp.forEach(e => {managerList.push({value: e.id, name: `${e.first_name} ${e.last_name}`})});
+            let roleList = [];
+            resRole.forEach(r => roleList.push({value: r.id, name: r.title}));
             if(err) throw err;
             inquirer.prompt([{
                 message: "What is the employee's first name?",
@@ -186,25 +183,20 @@ const addEmp = () => {
                 type: "list",
                 name: "role",
                 choices: () => {
-                    let arr = []
-                    for(let i = 0; i < roleList.length; i++){
-                        arr.push({name: roleList[i][1], value: roleList[i][0]});
+                    if(roleList.length < 1 || roleList === undefined){
+                        return [{name: "No roles available", value: "0"}];
                     }
-                    return arr;
+                    return roleList;
                 }
             },{
                 message: "Who is their manager?",
                 type: "list",
                 name: "mang",
                 choices: () => {
-                    let arr = []
-                    for(let i = 0; i < managerList.length; i++){
-                        arr.push({name: managerList[i][1], value: managerList[i][0]});
-                    }
-                    if(arr.length < 1 || arr === undefined){
+                    if(managerList.length < 1 || managerList === undefined){
                         return [{name: "No managers available", value: "0"}];
                     }
-                    return arr;
+                    return managerList;
                 }
             }]).then(response => {
                 connection.query(
