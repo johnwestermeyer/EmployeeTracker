@@ -266,10 +266,10 @@ const selectRole = () => {
             FROM role
             INNER JOIN department
             WHERE role.department_id = department.id`,
-            function(err, resRole) {
+            function(err, resJoin) {
             if (err) throw err;
             let output = [];
-            resRole.forEach(e=>{
+            resJoin.forEach(e=>{
                 output.push({id: e.id, title: e.title, salary: e.salary, "department id": e.name})
             })       
             console.table(output);          
@@ -279,34 +279,22 @@ const selectRole = () => {
 
 const selectEmp = () => {
     connection.query(
-        `SELECT * FROM role`,
-        function(err,resRole){  
-            if(err) throw err;     
-        connection.query(
-            `SELECT * FROM employee`,
+            `SELECT e.*, role.title, (SELECT CONCAT(e2.first_name, " ", e2.last_name) 
+            FROM employee as e2 WHERE e2.id = e.manager_id) as mangName	
+            FROM employee as e
+            INNER JOIN role
+            WHERE role.id = e.role_id`,
             function(err, resEmp) {
             if (err) throw err;
-            let output = [];
-            let empList = resEmp.map(x => [x.id,x.title]);          
-            resEmp.forEach(e=>{                
-                let roleName, managerName = "";  
-                for(let i = 0; i < resRole.length; i++){
-                    if(resRole[i].id === e.role_id){
-                        roleName = resRole[i].title;
-                    }
-                }
-                for(let j = 0; j < empList.length; j++){
-                    if(resEmp[j].id === e.manager_id){
-                        managerName = `${resEmp[j].first_name} ${resEmp[j].last_name}`;
-                    }
-                }
+            let output = [];          
+            resEmp.forEach(e=>{
                 output.push({id: e.id, "first name": e.first_name, "last name": e.last_name,
-                    role: roleName, manager: managerName})
+                    role: e.title, manager: e.mangName})
             })       
             console.table(output);          
             doMore();
         })
-    })
+    
 }
 
 const selectEmpByCat = () => {
