@@ -2,6 +2,8 @@ var mysql = require("mysql");
 var inquirer = require("inquirer");
 const cTable = require('console.table');
 
+//this one is a mess and in need of a major refactor, hopefully I will have time to do so in the near future
+
 var connection = mysql.createConnection({
   host: "localhost",
 
@@ -15,13 +17,13 @@ var connection = mysql.createConnection({
   password: "securepass12!",
   database: "employees_DB"
 });
-
+//start connection to database
 connection.connect(function(err) {
     if (err) throw err;
     console.log("connected as id " + connection.threadId + "\n");
     questionTime();
   });
-
+//main function, start in of inquirer prompts
 function questionTime(){    
     inquirer.prompt([{
         message: "What would you like to do?",
@@ -62,6 +64,15 @@ function questionTime(){
         {name: "Roles", value: "Role"}],
         name: "addType",
         when: response => response.choice === "ADD"
+    },{
+        message: `What would you like to delete?`,
+        type: "list",
+        choices: 
+        [{name: "Departments", value: "department"},
+        {name: "Employees", value: "employee"},
+        {name: "Roles", value: "role"}],
+        name: "deleteType",
+        when: response => response.choice === "DELETE"
     }]).then(response => {
         let doThis = "";
         switch (response.choice){
@@ -76,6 +87,9 @@ function questionTime(){
             case "SELECT":
                 doThis = "select" + response.viewType + "()";
                 eval(doThis);
+                break;
+            case "DELETE":
+                deleteThis(response.deleteType);
                 break;
             default:
                 connection.end();
@@ -208,7 +222,11 @@ const addEmp = () => {
             )}
         )}
     )}
-    )}
+)}
+
+const addThis = (tableName) => {
+    
+}
 
 const selectDept = () => {
     connection.query(
@@ -623,8 +641,29 @@ const updateEmp = () => {
             })
         })  
 }
-
-
+//catch-all delete function
+const deleteThis = (tableName) => {
+    connection.query(`SELECT * FROM ${tableName}`,
+    function(err, res) {
+        if (err) throw err;
+        let selList = [];            
+        res.forEach(e=> selList.push({value: e.id, name: e.name || e.title  || `${e.first_name} ${e.last_name}`}));
+        inquirer.prompt([{
+            message: `Which ${tableName} do you want to delete?`,
+            type: "list",
+            choices: selList,
+            name: "selID"
+        }]).then(response => {
+            connection.query(
+                `DELETE FROM ${tableName} WHERE id = "${response.selID}"`,
+                function(err, res) {
+                  if (err) throw err;
+                  console.log(`${res.affectedRows} ${tableName} deleted!\n`);
+                  doMore();
+            })
+        })
+    })
+}
 
 const doMore = () => {
     inquirer.prompt([{
