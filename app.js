@@ -120,7 +120,8 @@ const addDept = () => {
 
 const addRole = () => {
         connection.query('SELECT * FROM department', function(err, resDept){
-        let deptList = resDept.map(x => [x.id,x.name]);
+        let deptList = [];
+        resDept.forEach(d => deptList.push({value: x.id, name: x.name}));
         if(err) throw err;
         inquirer.prompt([{
             message: "What is the role title?",
@@ -137,11 +138,10 @@ const addRole = () => {
             type: "list",
             name: "dept",
             choices: () => {
-                let arr = []
-                for(let i = 0; i < deptList.length; i++){
-                    arr.push({name: deptList[i][1], value: deptList[i][0]});
+                if(deptList.length < 1 || deptList === undefined){
+                    return [{name: "No departments available", value: "0"}];
                 }
-                return arr;
+                return deptList;
             }
         }]).then(response => {
              connection.query(
@@ -216,9 +216,6 @@ const addEmp = () => {
     )}
 )}
 
-const addThis = (tableName) => {
-    
-}
 
 const selectDept = () => {
     connection.query(
@@ -253,7 +250,7 @@ const selectDeptBudget = () => {
                     //thank you Umair Ahmed on stackoverflow for the following if condition
                     if(output.findIndex(obj => obj.id == e.id) > -1){
                         let id = output.findIndex(obj => obj.id == e.id);
-                        output[id].budget = Math.round  (parseInt(output[id].budget)+(parseFloat(e.salary) * parseInt(e.roleCount)));
+                        output[id].budget = Math.round(parseInt(output[id].budget)+(parseFloat(e.salary) * parseInt(e.roleCount)));
                     }else{
                         output.push({id: e.id, name: e.name, budget: (parseFloat(e.salary) * parseInt(e.roleCount)).toFixed(0)});
                 }
@@ -263,29 +260,21 @@ const selectDeptBudget = () => {
     })
 }
 
-const selectRole = () => {
-    connection.query(
-        `SELECT * FROM department`,
-        function(err,resDept){  
-            if(err) throw err;  
+const selectRole = () => { 
         connection.query(
-            `SELECT * FROM role`,
+            `SELECT role.*, department.name 
+            FROM role
+            INNER JOIN department
+            WHERE role.department_id = department.id`,
             function(err, resRole) {
             if (err) throw err;
             let output = [];
             resRole.forEach(e=>{
-                let deptName = "";
-                for(let i = 0; i < resDept.length; i++){
-                    if(parseInt(resDept[i].id) === parseInt(e.department_id)){
-                        deptName = resDept[i].name;
-                    }
-                }
-                output.push({id: e.id, title: e.title, salary: e.salary, "department id": deptName})
+                output.push({id: e.id, title: e.title, salary: e.salary, "department id": e.name})
             })       
             console.table(output);          
             doMore();
             })
-        })
     }
 
 const selectEmp = () => {
