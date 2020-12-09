@@ -452,7 +452,7 @@ const updateRole = () => {
                 type: "list",
                 choices: deptList,
                 name: "newName",
-                when: response => response.choice === "department_id"
+                when: response => response.choice === "department_id",
             }]).then(response => {  
                 connection.query(
                     `UPDATE role SET ${response.choice} = "${response.newName}" 
