@@ -217,7 +217,7 @@ const addEmp = () => {
     )}
 )}
 
-
+//view Departments function
 const selectDept = () => {
     connection.query(
         `SELECT * FROM department`,
@@ -340,7 +340,7 @@ const selectEmpByCat = () => {
                 let roleList = [];
                 resRole.forEach(e=> roleList.push({name: e.title, value: e.id}));
                     inquirer.prompt([{
-                        message: "Which manager's employee would you like to list?",
+                        message: "Which role would you like to sort by?",
                         name: "roleID",
                         type: "list",
                         choices: roleList
@@ -579,7 +579,7 @@ const deleteThis = (tableName) => {
         })
     })
 }
-
+//Do you want to continue?
 const doMore = () => {
     inquirer.prompt([{
         message: "Do you want to make any more changes?",
